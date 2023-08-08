@@ -19,8 +19,12 @@ pipeline {
 
         stage("Build") {
             steps {
-                sh 'mvn package'
-                echo $usernamePass
+                script{
+                      sh 'mvn package'
+                      echo "$usernamePass"
+                }
+             
+                
             }
         }
     }
