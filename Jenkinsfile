@@ -1,31 +1,65 @@
 pipeline {
     agent any
-    triggers {
-        cron('H/10 * * * *')
+
+    tools {
+        // Install the Maven version configured as "M3" and add it to the path.
+        maven "M3"
     }
+
     stages {
-        
-        stage("compile") {
+        stage('Prepare') {
             steps {
-                sh 'mvn clean compile'
+                // Get some code from a GitHub repository
+                git branch: 'main',
+                    url: 'https://gitlab.com/VittalAB/pipelines-java2.git'
             }
-        }
-        
-        stage("Testing") {
-            steps {
-                sh 'mvn test'
+
+            post {
+                success {
+                    echo "Preparation is successfull ! :)"
+                }
             }
         }
 
-        stage("Build") {
-            steps {
-                script{
-                      sh 'mvn package'
-                      echo "$usernamePass"
+        stage('Build'){
+            steps{
+                sh mvn compile
+            }
+
+            post{
+                success{
+                echo "Build is succesfull ! :)"
                 }
-             
-                
             }
         }
+
+        stage('Test'){
+            steps{                
+                    sh "mvn -Dmaven.test.failure.ignore=true clean package"
+                    junit '**/target/surefire-reports/TEST-*.xml'
+                    archiveArtifacts 'target/*.war'
+            }
+            post{
+                success{
+                echo "Test is done" 
+                }
+            }
+        }
+
+        stage("Email"){
+            steps{
+                echo 'Sending email notification ...'
+                mail to: 'npz2kor@bosch.com',
+                subject: "Pipeline build is successfull",
+                body: "Test email notification for pipeline"
+
+            }
+            post{
+                success{
+                    echo "Email sent !!"
+                }
+            }
+        }
+
     }
 }
